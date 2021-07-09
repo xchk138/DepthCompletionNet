@@ -11,3 +11,4 @@ class DepthCompletionNet(nn.Module):
         pass
     def dump_info(self):
         pass
+    
