@@ -40,8 +40,8 @@ class MSConv2d(nn.Module):
         assert(padding=='same' or padding=='valid')
 
         self.scale = scale
-        self.conv0 = nn.Conv2d(in_channels, out_channels, ksize, stride, padding)
-        self.conv1 = nn.Conv2d(in_channels, out_channels, ksize, 1, 0)
+        self.conv1 = nn.Conv2d(in_channels, out_channels, ksize, stride, padding)
+        self.conv2 = nn.Conv2d(in_channels, out_channels, ksize, 1, 0)
 
         if weight is not None:
             assert(isinstance(weight, np.ndarray))
@@ -51,8 +51,8 @@ class MSConv2d(nn.Module):
             assert(weight.shape[1] == in_channels)
             assert(weight.shape[2] == weight.shape[3] == ksize)
             self.uniq_weight = nn.Parameter(torch.Tensor(weight), requires_grad=True)
-            self.conv0.weight = self.uniq_weight
             self.conv1.weight = self.uniq_weight
+            self.conv2.weight = self.uniq_weight
         else:
             self.conv2.weight = self.conv1.weight
 
@@ -62,20 +62,20 @@ class MSConv2d(nn.Module):
             assert(len(weight.shape) == 1)
             assert(bias.shape[0] == out_channels)
             self.uniq_bias = nn.Parameter(torch.Tensor(bias), requires_grad=True)
-            self.conv0.bias = self.uniq_bias
             self.conv1.bias = self.uniq_bias
+            self.conv2.bias = self.uniq_bias
         else:
             self.conv2.bias = self.conv1.bias
         
     def forward(self, x):
         # do the strided convolution as the main part of feature extraction
-        y = self.conv0(x)
+        y = self.conv1(x)
         h_in, w_in = x.shape[2:4]
         h_out, w_out = y.shape[2:4]
         # determine depth of the pyramid to build
         assert self.scale > 1
-        depth_h = math.floor(math.log(float(h_in) / self.conv0.kernel_size[0]) / math.log(self.scale))
-        depth_w = math.floor(math.log(float(w_in) / self.conv0.kernel_size[1]) / math.log(self.scale))
+        depth_h = math.floor(math.log(float(h_in) / self.conv1.kernel_size[0]) / math.log(self.scale))
+        depth_w = math.floor(math.log(float(w_in) / self.conv1.kernel_size[1]) / math.log(self.scale))
         depth = int(min(depth_h, depth_w))
         # calculate sizes of pyramid to reshape
         sizes_in = [None] * depth
@@ -87,7 +87,7 @@ class MSConv2d(nn.Module):
         for i in range(depth):
             # resize input feature maps into desired scale
             x_scaled = F.interpolate(x, size=sizes_in[i], mode='bilinear')
-            y_scaled = self.conv1(x_scaled)
+            y_scaled = self.conv2(x_scaled)
             print(y_scaled.size())
             # resize back to original size
             y_scaled = F.interpolate(y_scaled, size=(w_out, h_out), mode='bilinear')
@@ -97,13 +97,9 @@ class MSConv2d(nn.Module):
 
     def dump_info(self):
         return {
-            'in_channels': self.in_channels
-            , 'out_channels': self.out_channels
-            , 'ksize': self.ksize
-            , 'stride': self.stride
-            , 'scale': self.scale
-            , 'padding': self.padding
-            , 'pad_val': self.pad_val
-            , 'weight': self.conv.weight
-            , 'bias': self.conv.bias
+            'scale': self.scale
+            , 'conv1': self.conv1
+            , 'conv2': self.conv2
+            , 'uniq_weight': self.uniq_weight
+            , 'uniq_bias': self.uniq_bias
             }
