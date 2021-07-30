@@ -25,7 +25,6 @@ if __name__ == '__main__':
     if platform.system()=="Windows":
         root_dir_win32 = root_path.replace('/', '\\\\')
         os.system('md ' + root_dir_win32 + '\\\\disp')
-        #print('md ' + root_dir_win32 + '\\\\disp')
     else:
         os.system('mkdir -p ' + root_path + '/disp')
     files = glob.glob(root_path + '/depth/*.png')
