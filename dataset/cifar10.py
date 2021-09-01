@@ -64,7 +64,7 @@ def LoadCIFAR10_Train(nepoc, batch_size, onehot=False):
         seq = np.random.permutation(np.arange(nall))
     
 
-def LoadCIFAR10_Test(train_set=False):
+def LoadCIFAR10_Test():
     patch_size = 10000
     h = 32
     w = 32

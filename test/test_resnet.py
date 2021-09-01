@@ -13,7 +13,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from model.resnet import resnet18, resnet34, resnet50, resnet101
-from dataset.cifar10 import LoadCIFAR10_Test
+from dataset.cifar10 import LoadCIFAR10_Test, LoadCIFAR10_Train
 
 
 def test_ResNet_on_CIFAR10():
@@ -27,7 +27,20 @@ def test_ResNet_on_CIFAR10():
 
     net.eval()
     net = net.to(device)
+
+    # train accuracy
+    data = LoadCIFAR10_Train(1, 1)
+    ncorr = 0
+    nall = 0
+    for _, _, x, gt in data:
+        x_ = torch.from_numpy(x).to(device)
+        pred = net(x_)
+        if np.argmax(pred.detach().cpu().numpy()[0]) == gt[0]:
+            ncorr += 1
+        nall += 1
+    print('Final train accuracy: {}'.format(ncorr/nall))
     
+    # test accuracy
     data = LoadCIFAR10_Test()
     ncorr = 0
     nall = 0
@@ -37,7 +50,7 @@ def test_ResNet_on_CIFAR10():
         if np.argmax(pred.detach().cpu().numpy()[0]) == gt:
             ncorr += 1
         nall += 1
-    print('Final accuracy: {}'.format(ncorr/nall))
+    print('Final test accuracy: {}'.format(ncorr/nall))
 
 
 if __name__ == '__main__':
